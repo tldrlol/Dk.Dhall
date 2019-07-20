@@ -57,10 +57,8 @@ let lineComment : Parser<unit> =
     skipNewline
 
 
-let whitespaceChunk : Parser<unit>
-   =  spaces1
-  <|> lineComment
-  <|> blockComment
+let whitespaceChunk : Parser<unit> =
+  choice [ spaces1; lineComment; blockComment ]
 
 
 // TODO: Simple labels can't be keywords.
@@ -117,18 +115,19 @@ let unicodeEscape : Parser<string> =
     (parray 4 hexNumber |>> (toNumber >> char >> string))
 
 
-let doubleQuoteEscaped : Parser<string>
-   =  pstring "\""
-  <|> pstring "$"
-  <|> pstring "\\"
-  <|> pstring "/"
-  <|> (charReturn 'b' "\b")
-  <|> (charReturn 'f' "\f")
-  <|> (charReturn 'n' "\n")
-  <|> (charReturn 'r' "\r")
-  <|> (charReturn 't' "\t")
-  <|> (skipChar 'u' >>. unicodeEscape)
-
+let doubleQuoteEscaped : Parser<string> =
+  choice
+    [ pstring "\""
+      pstring "$"
+      pstring "\\"
+      pstring "/"
+      charReturn 'b' "\b"
+      charReturn 'f' "\f"
+      charReturn 'n' "\n"
+      charReturn 'r' "\r"
+      charReturn 't' "\t"
+      skipChar 'u' >>. unicodeEscape
+    ]
 
 let doubleQuoteChar: Parser<string> =
   codePointSatisfy <| fun c ->
