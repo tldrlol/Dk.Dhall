@@ -1,17 +1,31 @@
 module Dk.Dhall.Parser.Test
 
-
 open Xunit
 open FParsec
 
 open Dk.Dhall.Parser
 
 
-let inline parse p s =
-  run p s
-  |> function
-      | Success (s, _, _) -> Some s
-      | Failure _         -> None
+let formatAssertEquals expected actual =
+  sprintf
+    "assertEqual Failure:\nExpected: %A\nActual:   %A"
+    expected
+    actual
+
+
+type AssertEqualException<'a>(expected: 'a, actual: 'a) =
+  inherit System.Exception(formatAssertEquals expected actual)
+
+
+let assertEqual expected actual =
+  if expected <> actual then 
+    raise <| AssertEqualException (expected, actual)
+
+
+let parse p s =
+  run p s |> function
+    | Success (s, _, _) -> Result.Ok s
+    | Failure (s, e, u) -> Result.Error (s, e, u)
 
 
 [<Theory>]
@@ -23,7 +37,7 @@ let inline parse p s =
 [<InlineData("\r")>]
 [<InlineData("\t")>]
 let ``doubleQuoteLiteral handles simple escape sequences``
-  ( input: string ) =
+  (input: string) =
 
   let escape = function
     | "\"" -> "\\\""
@@ -41,16 +55,16 @@ let ``doubleQuoteLiteral handles simple escape sequences``
     |> parse doubleQuoteLiteral
 
   let expected =
-    Some input
+    Result.Ok input
 
-  Assert.Equal(expected, actual)
+  assertEqual expected actual
 
 
 [<Theory>]
 [<InlineData("\$")>]
 [<InlineData("\/")>]
 let ``doubleQuoteLiteral handles non .NET escape sequences``
-  ( input: string ) =
+  (input: string) =
 
   let actual =
     input
@@ -58,9 +72,9 @@ let ``doubleQuoteLiteral handles non .NET escape sequences``
     |> parse doubleQuoteLiteral
 
   let expected =
-    Some (input.Substring 1)
+    Result.Ok (input.Substring 1)
 
-  Assert.Equal(expected, actual)
+  assertEqual expected actual
 
 
 [<Theory>]
@@ -69,7 +83,7 @@ let ``doubleQuoteLiteral handles non .NET escape sequences``
 [<InlineData("\\u{00002200}")>]
 [<InlineData("\\u{00102200}")>]
 let ``doubleQuoteLiteral handles unicode escape sequences``
-  ( input: string ) =
+  (input: string) =
 
   let actual =
     input
@@ -81,6 +95,21 @@ let ``doubleQuoteLiteral handles unicode escape sequences``
     |> fun x -> x.Value
     |> fun x -> System.Convert.ToInt32 (x, 16)
     |> System.Char.ConvertFromUtf32
-    |> Some
+    |> Result.Ok
 
-  Assert.Equal(expected, actual)
+  assertEqual expected actual
+
+
+[<Theory>]
+[<InlineData("''\n''", "")>]
+[<InlineData("''''''''''", "''''")>]
+[<InlineData("''\n''''''''", "''''")>]
+[<InlineData("''''''''''''''''", "''''''''")>]
+let ``singleQuoteLiteral works on simple examples``
+  (input: string)
+  (expected: string) =
+
+  let actual   = parse singleQuoteLiteral input
+  let expected = Result.Ok expected
+
+  assertEqual expected actual

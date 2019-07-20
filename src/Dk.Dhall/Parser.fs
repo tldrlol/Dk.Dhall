@@ -31,8 +31,29 @@ let codePointSatisfy predicate =
   pair <|> single
 
 
+let inline isValidNonAscii (c: int) : bool =
+  inRange 0x80     0xD7FF   c ||
+  inRange 0xE000   0xFFFD   c ||
+  inRange 0x10000  0x1FFFD  c ||
+  inRange 0x20000  0x2FFFD  c ||
+  inRange 0x30000  0x3FFFD  c ||
+  inRange 0x40000  0x4FFFD  c ||
+  inRange 0x50000  0x5FFFD  c ||
+  inRange 0x60000  0x6FFFD  c ||
+  inRange 0x70000  0x7FFFD  c ||
+  inRange 0x80000  0x8FFFD  c ||
+  inRange 0x90000  0x9FFFD  c ||
+  inRange 0xA0000  0xAFFFD  c ||
+  inRange 0xB0000  0xBFFFD  c ||
+  inRange 0xC0000  0xCFFFD  c ||
+  inRange 0xD0000  0xDFFFD  c ||
+  inRange 0xE0000  0xEFFFD  c ||
+  inRange 0xF0000  0xFFFFD  c ||
+  inRange 0x100000 0x10FFFD c
+
+
 let blockCommentChar
-   =  codePointSatisfy (inRange 0x20 0X10FFFF) >>% ()
+   =  codePointSatisfy (fun c -> inRange 0x20 0x7F c || isValidNonAscii c) >>% ()
   <|> skipNewline
   <|> skipChar '\t'
 
@@ -53,7 +74,11 @@ do
 let lineComment : Parser<unit> =
   pstring "--" >>.
   skipManyTill
-    (codePointSatisfy (fun c -> inRange 0x20 0x10FFFF c || c = int '\t'))
+    ( codePointSatisfy <| fun c ->
+        inRange 0x20 0x7F c ||
+        isValidNonAscii c   ||
+        c = int '\t'
+    )
     skipNewline
 
 
@@ -131,9 +156,10 @@ let doubleQuoteEscaped : Parser<string> =
 
 let doubleQuoteChar: Parser<string> =
   codePointSatisfy <| fun c ->
-    inRange 0x20 0x20     c ||
-    inRange 0x23 0x5B     c ||
-    inRange 0x5D 0x10FFFF c
+    inRange 0x20 0x20 c ||
+    inRange 0x23 0x5B c ||
+    inRange 0x5D 0x7F c ||
+    isValidNonAscii   c
 
 
 // TODO: Interpolation.
@@ -157,30 +183,39 @@ let escapedInterpolation : Parser<string> =
   skipString "''${" >>% "${"
 
 
+let tab : Parser<string> =
+  charReturn '\t' "\t"
+
+
 let endOfLine : Parser<string>
-   =  (skipChar '\n' >>% "\n")
+   =  (charReturn '\n' "\n")
   <|> (skipChar '\r' >>. skipChar '\n' >>% "\r\n")
 
 
 let singleQuoteChar : Parser<string>
-   =  codePointSatisfy (inRange 0x20 0X10FFFF)
-  <|> (skipChar '\t' >>% "\t")
+   =  codePointSatisfy (fun c -> inRange 0x20 0x7F c || isValidNonAscii c)
+  <|> tab
   <|> endOfLine
 
 
 // TODO: Interpolation.
-let singleQuoteChunk : Parser<string>
-  //  =  escapedQuotePair
-  // <|> escapedInterpolation
-  // <|> singleQuoteChar
-   =  singleQuoteChar
+let singleQuoteChunk : Parser<string> =
+  let guard =
+    notFollowedBy 
+      (skipString "''" >>. notFollowedBy (skipChar '\'' <|> skipString "${"))
+      
+  guard >>. choice
+    [ escapedQuotePair
+      escapedInterpolation
+      singleQuoteChar
+    ]
 
 
 let singleQuoteLiteral : Parser<string> =
   between
-    (skipString "''" >>. skipNewline)
+    (skipString "''" >>. opt skipNewline)
     (skipString "''")
-    (manyStrings singleQuoteChar)
+    (manyStrings singleQuoteChunk)
 
 
 let textLiteral : Parser<string>
