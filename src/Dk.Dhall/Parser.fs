@@ -31,24 +31,6 @@ let codePointSatisfy predicate =
   pair <|> single
 
 
-let codePointRange min max =
-
-  let inline predicate x =
-    inRange min max x
-
-  let single =
-    satisfy predicate |>> string
-
-  let pair = surrogatePair >>= fun c ->
-    if predicate c
-    then preturn (System.Char.ConvertFromUtf32 c)
-    else fail (sprintf "Code point %x outside of range [%x, %x]" c min max)
-
-  if max <= 0xFFFF
-  then single
-  else pair <|> single
-
-
 let blockCommentChar
    =  codePointSatisfy (inRange 0x20 0X10FFFF) >>% ()
   <|> skipNewline
