@@ -221,3 +221,120 @@ let singleQuoteLiteral : Parser<string> =
 let textLiteral : Parser<string>
    =  doubleQuoteLiteral
   <|> singleQuoteLiteral
+
+
+let _keyword (s: string) : Parser<unit> =
+  skipString s >>. skipMany1 whitespaceChunk
+
+
+let _reserved (s: string) : Parser<unit> =
+  skipString s >>. skipMany whitespaceChunk
+
+
+let _if       : Parser<unit> = _keyword "if"
+let _then     : Parser<unit> = _keyword "then"
+let _else     : Parser<unit> = _keyword "else"
+let _let      : Parser<unit> = _keyword "let"
+let _in       : Parser<unit> = _keyword "in"
+let _as       : Parser<unit> = _keyword "as"
+let _using    : Parser<unit> = _keyword "using"
+let _merge    : Parser<unit> = _keyword "merge"
+let _missing  : Parser<unit> = _keyword "missing"
+let _Infinity : Parser<unit> = _keyword "Infinity"
+let _NaN      : Parser<unit> = _keyword "NaN"
+let _Some     : Parser<unit> = _keyword "Some"
+let _toMap    : Parser<unit> = _keyword "toMap"
+
+
+let keyword : Parser<unit> =
+  choice
+    [ _if
+      _then
+      _else
+      _let
+      _in
+      _using
+      _missing
+      _as
+      _Infinity
+      _NaN
+      _merge
+      _Some
+      _toMap
+    ]
+
+
+let _Optional : Parser<unit> = _reserved "Optional"
+let _Text     : Parser<unit> = _reserved "Text"
+let _List     : Parser<unit> = _reserved "List"
+let _Location : Parser<unit> = _reserved "Location"
+
+
+let _Bool             : Parser<unit> = _reserved "Bool"
+let _True             : Parser<unit> = _reserved "True"
+let _False            : Parser<unit> = _reserved "False"
+let _None             : Parser<unit> = _reserved "None"
+let _Natural          : Parser<unit> = _reserved "Natural"
+let _Integer          : Parser<unit> = _reserved "Integer"
+let _Double           : Parser<unit> = _reserved "Double"
+let _Type             : Parser<unit> = _reserved "Type"
+let _Kind             : Parser<unit> = _reserved "Kind"
+let _Sort             : Parser<unit> = _reserved "Sort"
+let _NaturalFold      : Parser<unit> = _reserved "Natural/fold"
+let _NaturalBuild     : Parser<unit> = _reserved "Natural/build"
+let _NaturalIsZero    : Parser<unit> = _reserved "Natural/isZero"
+let _NaturalEven      : Parser<unit> = _reserved "Natural/even"
+let _NaturalOdd       : Parser<unit> = _reserved "Natural/odd"
+let _NaturalToInteger : Parser<unit> = _reserved "Natural/toInteger"
+let _NaturalShow      : Parser<unit> = _reserved "Natural/show"
+let _IntegerToDouble  : Parser<unit> = _reserved "Integer/toDouble"
+let _IntegerShow      : Parser<unit> = _reserved "Integer/show"
+let _DoubleShow       : Parser<unit> = _reserved "Double/show"
+let _ListBuild        : Parser<unit> = _reserved "List/build"
+let _ListFold         : Parser<unit> = _reserved "List/fold"
+let _ListLength       : Parser<unit> = _reserved "List/length"
+let _ListHead         : Parser<unit> = _reserved "List/head"
+let _ListLast         : Parser<unit> = _reserved "List/last"
+let _ListIndexed      : Parser<unit> = _reserved "List/indexed"
+let _ListReverse      : Parser<unit> = _reserved "List/reverse"
+let _OptionalFold     : Parser<unit> = _reserved "Optional/fold"
+let _OptionalBuild    : Parser<unit> = _reserved "Optional/build"
+let _TextShow         : Parser<unit> = _reserved "Text/show"
+
+
+let builtin : Parser<unit> =
+  choice
+    [ _NaturalFold
+      _NaturalBuild
+      _NaturalIsZero
+      _NaturalEven
+      _NaturalOdd
+      _NaturalToInteger
+      _NaturalShow
+      _IntegerToDouble
+      _IntegerShow
+      _DoubleShow
+      _ListBuild
+      _ListFold
+      _ListLength
+      _ListHead
+      _ListLast
+      _ListIndexed
+      _ListReverse
+      _OptionalFold
+      _OptionalBuild
+      _TextShow
+      _Bool
+      _True
+      _False
+      _Optional
+      _None
+      _Natural
+      _Integer
+      _Double
+      _Text
+      _List
+      _Type
+      _Kind
+      _Sort
+    ]
