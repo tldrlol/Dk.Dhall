@@ -199,6 +199,7 @@ let singleQuoteChar : Parser<string>
 
 
 // TODO: Interpolation.
+// TODO: Strip leading whitespace
 let singleQuoteChunk : Parser<string> =
   let guard =
     notFollowedBy 
@@ -338,3 +339,29 @@ let builtin : Parser<unit> =
       _Kind
       _Sort
     ]
+
+
+let inline operator cp alt : Parser<unit> = 
+  skipSatisfy ((=) cp) <|> skipString alt
+
+
+let combine      = operator '\u2227'  """/\"""
+let combineTypes = operator '\u2A53' """//\\"""
+let prefer       = operator '\u2AFD' """//"""
+let lambda       = operator '\u03BB' """\"""
+let forall       = operator '\u2200' """forall"""
+let arrow        = operator '\u2192' """->"""
+
+
+let exponent : Parser<int> =
+
+  let applySign s x =
+    match s with
+    | Some '-' -> x * -1
+    | _        -> x
+
+  let toNumber xs = Seq.fold (fun a b -> a * 10 + int b - int '0') 0 xs
+
+  skipChar 'e' >>.
+  opt (anyOf "+-") >>= fun s ->
+    many1 digit |>> (toNumber >> applySign s)

@@ -100,6 +100,12 @@ let ``doubleQuoteLiteral handles unicode escape sequences``
   assertEqual expected actual
 
 
+let parseTest parser expected input =
+  let actual   = parse parser input
+  let expected = Result.Ok expected
+  assertEqual expected actual
+
+
 [<Theory>]
 [<InlineData("''\n''", "")>]
 [<InlineData("''''''''''", "''''")>]
@@ -108,8 +114,14 @@ let ``doubleQuoteLiteral handles unicode escape sequences``
 let ``singleQuoteLiteral works on simple examples``
   (input: string)
   (expected: string) =
+  parseTest singleQuoteLiteral expected input
 
-  let actual   = parse singleQuoteLiteral input
-  let expected = Result.Ok expected
 
-  assertEqual expected actual
+[<Theory>]
+[<InlineData("e127",   127)>]
+[<InlineData("e+127",  127)>]
+[<InlineData("e-127", -127)>]
+let ``exponent works on some examples``
+  (input: string)
+  (expected: int) =
+  parseTest exponent expected input
