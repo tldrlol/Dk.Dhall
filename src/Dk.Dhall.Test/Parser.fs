@@ -125,3 +125,21 @@ let ``exponent works on some examples``
   (input: string)
   (expected: int) =
   parseTest exponent expected input
+
+
+[<Theory>]
+[<InlineData("-Infinity", System.Double.NegativeInfinity)>]
+[<InlineData("Infinity",  System.Double.PositiveInfinity)>]
+// [<InlineData("NaN",       System.Double.NaN)>]
+let ``doubleLiteral works on some examples``
+  (input: string)
+  (expected: double) =
+  parseTest doubleLiteral expected input
+
+
+// TODO: Clean this up a bit.
+[<Fact>]
+let ``doubleLiteral parser NaN`` () =
+  match run doubleLiteral "NaN" with
+  | Success (x, _, _) -> Assert.True (System.Double.IsNaN x)
+  | Failure _         -> Assert.True false

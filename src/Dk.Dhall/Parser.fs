@@ -240,11 +240,12 @@ let _in       : Parser<unit> = _keyword "in"
 let _as       : Parser<unit> = _keyword "as"
 let _using    : Parser<unit> = _keyword "using"
 let _merge    : Parser<unit> = _keyword "merge"
-let _missing  : Parser<unit> = _keyword "missing"
-let _Infinity : Parser<unit> = _keyword "Infinity"
-let _NaN      : Parser<unit> = _keyword "NaN"
 let _Some     : Parser<unit> = _keyword "Some"
 let _toMap    : Parser<unit> = _keyword "toMap"
+
+let _missing  : Parser<unit> = _reserved "missing"
+let _Infinity : Parser<unit> = _reserved "Infinity"
+let _NaN      : Parser<unit> = _reserved "NaN"
 
 
 let keyword : Parser<unit> =
@@ -365,3 +366,20 @@ let exponent : Parser<int> =
   skipChar 'e' >>.
   opt (anyOf "+-") >>= fun s ->
     many1 digit |>> (toNumber >> applySign s)
+
+
+let minusInfinityLiteral : Parser<float> =
+  skipChar '-' >>. _Infinity >>% System.Double.NegativeInfinity
+
+
+let infinityLiteral : Parser<float> =
+  _Infinity >>% System.Double.PositiveInfinity
+
+
+// TODO: normal values
+let doubleLiteral : Parser<double> =
+  choice
+    [ minusInfinityLiteral
+      infinityLiteral
+      _NaN >>% System.Double.NaN
+    ]
