@@ -146,3 +146,12 @@ let ``doubleLiteral parses string representations of System.Double`` () =
       | ParserResult.Success (actual, _, _) -> expected = actual
       | ParserResult.Failure _              -> false
   }
+
+
+[<Theory>]
+[<InlineData("+127",  127)>]
+[<InlineData("-127", -127)>]
+let ``integerLiteral works with leading sign``
+  (input: string)
+  (expected: bigint) =
+  parseTest integerLiteral expected input

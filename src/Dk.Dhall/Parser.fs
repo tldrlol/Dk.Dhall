@@ -397,3 +397,14 @@ let doubleLiteral : Parser<double> =
       infinityLiteral
       _NaN >>% System.Double.NaN
     ]
+
+
+let naturalLiteral : Parser<bigint> =
+  many1Chars digit |>> System.Numerics.BigInteger.Parse
+
+
+let integerLiteral : Parser<bigint> =
+  many1Chars2
+    (anyOf "+-")
+    (digit)
+  |>> System.Numerics.BigInteger.Parse
