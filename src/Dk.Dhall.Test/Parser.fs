@@ -1,7 +1,7 @@
 module Dk.Dhall.Parser.Test
 
-open Xunit
 open FParsec
+open Xunit
 
 open Dk.Dhall.Parser
 
@@ -118,20 +118,9 @@ let ``singleQuoteLiteral works on simple examples``
 
 
 [<Theory>]
-[<InlineData("e127",   127)>]
-[<InlineData("e+127",  127)>]
-[<InlineData("e-127", -127)>]
-let ``exponent works on some examples``
-  (input: string)
-  (expected: int) =
-  parseTest exponent expected input
-
-
-[<Theory>]
 [<InlineData("-Infinity", System.Double.NegativeInfinity)>]
 [<InlineData("Infinity",  System.Double.PositiveInfinity)>]
-// [<InlineData("NaN",       System.Double.NaN)>]
-let ``doubleLiteral works on some examples``
+let ``doubleLiteral works on infinites``
   (input: string)
   (expected: double) =
   parseTest doubleLiteral expected input
@@ -139,7 +128,21 @@ let ``doubleLiteral works on some examples``
 
 // TODO: Clean this up a bit.
 [<Fact>]
-let ``doubleLiteral parser NaN`` () =
+let ``doubleLiteral works on NaN`` () =
   match run doubleLiteral "NaN" with
   | Success (x, _, _) -> Assert.True (System.Double.IsNaN x)
   | Failure _         -> Assert.True false
+
+
+open Hedgehog
+
+
+[<Fact>]
+let ``doubleLiteral parses string representations of System.Double`` () =
+  Property.check <| property {
+    let! expected = Gen.double (Range.linearBounded ())
+    return
+      match run doubleLiteral (expected.ToString("F17")) with
+      | ParserResult.Success (actual, _, _) -> expected = actual
+      | ParserResult.Failure _              -> false
+  }

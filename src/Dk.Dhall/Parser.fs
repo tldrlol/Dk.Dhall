@@ -354,18 +354,16 @@ let forall       = operator '\u2200' """forall"""
 let arrow        = operator '\u2192' """->"""
 
 
-let exponent : Parser<int> =
+let inline optOrEmpty p : Parser<string> =
+  opt p |>> function | Some x -> string x | None -> ""
 
-  let applySign s x =
-    match s with
-    | Some '-' -> x * -1
-    | _        -> x
 
-  let toNumber xs = Seq.fold (fun a b -> a * 10 + int b - int '0') 0 xs
-
-  skipChar 'e' >>.
-  opt (anyOf "+-") >>= fun s ->
-    many1 digit |>> (toNumber >> applySign s)
+let exponent : Parser<string> =
+  pipe3
+    (pstring "e")
+    (optOrEmpty (anyOf "+-"))
+    (manyChars digit)
+    (fun e sign digits -> e + sign + digits)
 
 
 let minusInfinityLiteral : Parser<float> =
@@ -376,10 +374,26 @@ let infinityLiteral : Parser<float> =
   _Infinity >>% System.Double.PositiveInfinity
 
 
-// TODO: normal values
+let numericDoubleLiteral : Parser<double> =
+  let suffix
+     =  pipe3
+          (pstring ".")
+          (many1Chars digit)
+          (optOrEmpty exponent)
+          (fun dot digits exponent -> dot + digits + exponent)
+    <|> exponent
+
+  pipe3
+    (optOrEmpty (anyOf "+-"))
+    (many1Chars digit)
+    (suffix)
+    (fun sign digits suffix -> System.Double.Parse (sign + digits + suffix))
+
+
 let doubleLiteral : Parser<double> =
   choice
-    [ minusInfinityLiteral
+    [ attempt numericDoubleLiteral
+      minusInfinityLiteral
       infinityLiteral
       _NaN >>% System.Double.NaN
     ]
